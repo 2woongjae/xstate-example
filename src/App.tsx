@@ -18,9 +18,16 @@ const App: React.FC = () => {
       setUsers([]);
       setError(null);
       setIsLoading(true);
-      const res = await axios.get<GithubUser[]>("https://api.github.com/users");
+      await sleep(Math.random() * 1000);
+      const res = await axios.get<GithubUser[]>(
+        Math.random() > 0.7
+          ? "https://api.github.com/users"
+          : "http://localhost:5000/users"
+      );
+      console.log("YES");
       setUsers(res.data);
     } catch (error) {
+      console.log("NO");
       setError(error);
     } finally {
       setIsLoading(false);
@@ -30,7 +37,7 @@ const App: React.FC = () => {
     <div>
       <button onClick={request}>Request</button>
       {isLoading && <p>Loading...</p>}
-      {!isLoading && error && <p>{error}</p>}
+      {!isLoading && error && <p>{error.message}</p>}
       {!isLoading && error === null && (
         <div>
           {users.map(user => (
@@ -48,5 +55,13 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+function sleep(ms: number) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
+}
 
 export default App;
