@@ -1,46 +1,44 @@
-import React, { useState } from "react";
-import "./App.css";
+import React from "react";
 import axios from "axios";
-
-interface GithubUser {
-  id: number;
-  login: string;
-  avatar_url: string;
-}
+import requestUsers, { GithubUser } from "./machines/requestUsers";
+import { useMachine } from "@xstate/react";
 
 const App: React.FC = () => {
-  const [users, setUsers] = useState<GithubUser[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  async function request() {
-    try {
-      setUsers([]);
-      setError(null);
-      setIsLoading(true);
-      await sleep(Math.random() * 1000);
-      const res = await axios.get<GithubUser[]>(
-        Math.random() > 0.7
-          ? "https://api.github.com/users"
-          : "http://localhost:5000/users"
-      );
-      console.log("YES");
-      setUsers(res.data);
-    } catch (error) {
-      console.log("NO");
-      setError(error);
-    } finally {
-      setIsLoading(false);
+  const [requestUsersState, sendToRequestUsersMachine] = useMachine(
+    requestUsers,
+    {
+      actions: {
+        request: async (context, event) => {
+          try {
+            await sleep(Math.random() * 1000);
+            const res = await axios.get<GithubUser[]>(
+              Math.random() > 0.7
+                ? "https://api.github.com/users"
+                : "http://localhost:5000/users"
+            );
+            console.log("YES");
+            sendToRequestUsersMachine({ type: "RESOLVE", users: res.data });
+          } catch (error) {
+            console.log("NO");
+            sendToRequestUsersMachine({ type: "REJECT", error });
+          }
+        }
+      }
     }
-  }
+  );
+
   return (
     <div>
-      <button onClick={request}>Request</button>
-      {isLoading && <p>Loading...</p>}
-      {!isLoading && error && <p>{error.message}</p>}
-      {!isLoading && error === null && (
+      <button onClick={() => sendToRequestUsersMachine({ type: "REQUEST" })}>
+        Request
+      </button>
+      {requestUsersState.matches("pending") && <p>Loading...</p>}
+      {requestUsersState.matches("fail") && (
+        <p>{requestUsersState.context.error.message}</p>
+      )}
+      {requestUsersState.matches("success") && (
         <div>
-          {users.map(user => (
+          {requestUsersState.context.users.map(user => (
             <div key={user.id}>
               <img
                 src={user.avatar_url}
