@@ -7,21 +7,15 @@ const App: React.FC = () => {
   const [requestUsersState, sendToRequestUsersMachine] = useMachine(
     requestUsers,
     {
-      actions: {
-        request: async (context, event) => {
-          try {
-            await sleep(Math.random() * 1000);
-            const res = await axios.get<GithubUser[]>(
-              Math.random() > 0.7
-                ? "https://api.github.com/users"
-                : "http://localhost:5000/users"
-            );
-            console.log("YES");
-            sendToRequestUsersMachine({ type: "RESOLVE", users: res.data });
-          } catch (error) {
-            console.log("NO");
-            sendToRequestUsersMachine({ type: "REJECT", error });
-          }
+      services: {
+        request: async () => {
+          await sleep(Math.random() * 1000);
+          const res = await axios.get<GithubUser[]>(
+            Math.random() > 0.7
+              ? "https://api.github.com/users"
+              : "http://localhost:5000/users"
+          );
+          return res.data;
         }
       }
     }

@@ -44,10 +44,10 @@ const requestUsers = Machine<
         }
       },
       pending: {
-        entry: ["request"],
-        on: {
-          RESOLVE: { target: "success", actions: ["setUsers"] },
-          REJECT: { target: "fail", actions: ["setError"] }
+        invoke: {
+          src: "request",
+          onDone: { target: "success", actions: ["setUsers"] },
+          onError: { target: "fail", actions: ["setError"] }
         }
       },
       success: {
@@ -65,10 +65,10 @@ const requestUsers = Machine<
   {
     actions: {
       setUsers: assign((context, event: any) => ({
-        users: event.users
+        users: event.data
       })),
       setError: assign((context, event: any) => ({
-        error: event.error
+        error: event.data
       }))
     }
   }
